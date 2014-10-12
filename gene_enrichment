@@ -1,0 +1,41 @@
+import glob
+import Bio.Ontology.IO as OntoIO
+from Bio.Ontology import TermForTermEnrichmentFinder
+
+def process(entry):
+	w=open('Mouse/mart_mm9_gene_ontology.txt')
+	string=''
+	for lines in w:
+		ref=lines.split('\t')[1]
+		if(ref==entry):
+			string=lines.split('\t')[3]
+			break
+	return string
+	
+go_graph = OntoIO.read("Mouse/gene_ontology_1.0.obo", "obo")
+assocs = OntoIO.read("Mouse/mart_mm9_gene_association_new.txt", "gaf")
+ef = TermForTermEnrichmentFinder(assocs, go_graph)
+
+files=glob.glob("../../Selected-motifs-mouse/gene/Old_predictions/select_threshold/*_m.txt")
+print files
+
+for lines in range(0,len(files)):
+	file1=open(files[lines])
+	file2=open('mouse_gene/'+files[lines].split('/')[6][:len(files[lines].split('/')[6])-4]+'_enrichment'+'.csv','w')
+	file2.write('query'+';'+'GO_id'+';'+'Process'+';'+'Name'+';'+'p_value'+'\n')
+	p=0
+	for items in file1:
+		genes=str(items).split(':')[1].split('\n')[0]
+		genes=genes[1:][:len(genes)-2].split(',')
+		en = ef.find_enrichment(genes)
+		entry= en.filter_p_val(0.05).entries
+		for q in range (0,len(entry)):
+			gg=str(entry[q]).split('\n')[0].split(': ')[1]
+			string=process(gg)
+			file2.write('query_'+str(p)+';'+str(entry[q]).split('\n')[0].split(': ')[1]+';'+string.split('\n')[0]+';'+str(entry[q]).split('\n')[1].split(': ')[1]+';'+str(entry[q]).split('\n')[2].split(': ')[1]+'\n')
+		p=p+1
+print 'done'
+	
+#assertEqual(24, len(en.filter_p_val(0.05).entries))
+# EnrichmentEntry(id = GO:0048525, name = negative regulation of viral process, p_value = 0.0265091991704)
+
