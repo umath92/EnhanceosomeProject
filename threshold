@@ -1,0 +1,40 @@
+import Bio.Motif
+
+def thresholds(line):
+	name=line.split(':')[0]
+	motifs=line.split(':')[1]
+	motif_list=motifs.split(',')
+	motif_list=[f.strip() for f in motif_list]
+	out=open(name+'_thresholds.csv','w')
+	out.write('motif_id\tB_10\tB_100\tB_1000\n')
+	for motif in motif_list:
+		m_old=Bio.Motif.read(open("/home/tiuryn/Python_motifs/motywy-jaspar/"+motif+'.pfm'),"jaspar-pfm")
+		sd= Bio.Motif.ScoreDistribution(m_old,10**4)
+		b_10=sd.threshold_balanced(10)
+		b_100=sd.threshold_balanced(100)
+		b_1000=sd.threshold_balanced(1000)
+		out.write(motif+'\t'+str(b_10)+'\t'+str(b_100)+'\t'+str(b_1000)+'\n')
+	out.close()
+
+def create(line):
+	name=line.split(':')[0]
+	hits=open(name+'.csv')
+	thresholds=open(name+'_thresholds.csv')
+	hits.readline()
+	h_list=list(hits)
+	thresholds.readline()
+	out=open(name+'_selected.csv','w')
+	out.write('motif_id\tB_100\tB_1000\tSCORE\tSTART\tEND\n')
+	for item in thresholds:
+		motif_id=item.split()[0]
+		b_1000=item.split()[3]
+		b_100=item.split()[2]
+		current_lits=[f for f in h_list if f.split()[0]==motif_id and float(f.split()[3])>float(b_100)]
+		#print current_lits
+		for l in current_lits:
+			out.write(motif_id+'\t'+str(b_100)+'\t'+str(b_1000)+'\t'+str(l.split()[3])+'\t'+str(l.split()[1])+'\t'+str(l.split()[2])+'\n')
+	out.close()
+
+lines=list(open('selected_motifs.txt'))
+for line in lines:
+	create(line)
