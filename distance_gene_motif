@@ -1,6 +1,7 @@
 import gzip
 
 def seek(line):
+
 	n1=line.split(',')[0]
 	n2=line.split(',')[3]
 	hyp_id=line.split(',')[10]
