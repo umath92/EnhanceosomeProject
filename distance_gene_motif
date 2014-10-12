@@ -1,0 +1,167 @@
+import gzip
+
+def seek(line):
+	n1=line.split(',')[0]
+	n2=line.split(',')[3]
+	hyp_id=line.split(',')[10]
+	#print hyp_id
+	hit=open('UwDnase_selected_TIT_1_weak_unclustered_sort.hits')
+	ctype=line.split(',')[15]
+	ctype=ctype.split('\n')[0]
+	new=open(hyp_id+'_'+n1+'_'+n2+'_'+ctype+'_unclustered.csv','w')
+	new.write('chr'+'\t'+'start_identi'+'\t'+'end_identi'+'\t'+'Overlap_gene_name'+'\t'+'start_gene'+'\t'+'end_gene'+'\t'+'orientation_gene'+'\t'+'starti_genestart'+'\t'+'Name_DP'+'\t'+'down_positive'+'\t'+'Name_DN'+'\t'+'down_negative'+'\t'+'Name_UP'+'\t'+'up_positive'+'\t'+'Name_UN'+'\t'+'up_negative'+'\t'+'Hmm_act'+'\t'+'Hmm_act_midpoint'+'\n')
+	tag=0
+	tag1=0
+	for items in hit:
+		tag=2
+		chrome=items.split('\t')[1]
+		sta=int(items.split('\t')[2])
+		en=int(items.split('\t')[3])
+		if (hyp_id==items.split('\t')[0]):
+			tag1=1
+			tag=1
+			if (((sta)+(en))%2==0):
+				mid=((sta)+(en))/2
+			else:
+				mid=((sta)+(en)+1)/2
+			name_overlap=compare_overlap(chrome,sta,en)
+			if not name_overlap.split('\t')[0]=='':
+				right_front='\t'
+				right_reverse='\t'
+				left_front='\t'
+				left_reverse='\t'
+			else:
+				right_front=compare_right_front(mid,chrome)
+				right_reverse=compare_right_reverse(mid,chrome)
+				left_front=compare_left_front(mid,chrome)
+				left_reverse=compare_left_reverse(mid,chrome)
+			new.write(chrome+'\t'+str(sta)+'\t'+str(en)+'\t'+name_overlap+'\t'+str(right_front)+'\t'+str(right_reverse)+'\t'+str(left_front)+'\t'+str(left_reverse))
+			name_act=''
+			nend=''
+			#print 'Entering tab file'
+			for tab in tab_1:
+				if(hyp_id==tab.split('\t')[1]):
+					Cell_type=tab.split('\t')[9]
+					bed=list(gzip.open('../../wgEncodeBroadHmm_hg19/'+Cell_type+'.bed.gz'))
+					name_act=''
+					tag2=0
+					tag3=0
+					nend=''
+					for iteration in bed:
+						tag2=2
+						if('chr'+chrome==iteration.split('\t')[0]):
+							tag2=1
+							tag3=1
+							i_start=int(iteration.split('\t')[1])
+							i_end=int(iteration.split('\t')[2])
+							if(sta<=i_start and en>=i_end):
+								name_act=name_act+'|'+iteration.split('\t')[3]
+							if(en>=i_end and sta<=i_end):
+								name_act=name_act+'|'+iteration.split('\t')[3]
+							if(sta<=i_start and en>=i_start):
+								name_act=name_act+'|'+iteration.split('\t')[3]
+							if(sta>=i_start and en<=i_end):
+								#print '4'+name_act
+								name_act=name_act+'|'+iteration.split('\t')[3]
+							if(mid>=i_start and mid<=i_end):
+								nend=iteration.split('\t')[3]
+						if (tag2==2 and tag3==1):
+								break
+				if not (name_act==''):
+					#print name_act+'breaking'
+					break
+			#print name_act+'printing'
+			new.write('\t'+name_act+'\t'+nend+'\n')
+		if tag==2 and tag1==1:
+			break
+		
+	print "end "
+	
+def compare_overlap(chrome,start,end):
+	gene_overlap.seek(0,0)
+	name_overlap=''
+	a=''
+	b=''
+	c=''
+	d=''
+	for row in gene_overlap:
+		if not (int(row.split('\t')[3])<start or int(row.split('\t')[2])>end):
+			if(row.split('\t')[1]==chrome):
+				name_overlap=row.split('\t')[0]	
+				a=row.split('\t')[2]
+				b=row.split('\t')[3]
+				c=row.split('\t')[4]
+				d=start-int(a)
+				break
+	return (name_overlap+'\t'+a+'\t'+b+'\t'+c+'\t'+str(d))
+				
+def compare_right_front(mid,chrome):
+	count=0
+	right_front=0
+	name = ''
+	gene_1.seek(0,0)
+	for row in gene_1:
+		if (int(row.split('\t')[2])>=mid and row.split('\t')[1]==chrome):
+			mark=int(row.split('\t')[2])-mid
+			right_front=mark
+			name=row.split('\t')[0]
+			break
+	return (name+'\t'+str(right_front))
+
+def compare_right_reverse(mid,chrome):
+	count=0
+	right_front=0
+	name = ''
+	gene_2.seek(0,0)
+	for row in gene_2:
+		if (int(row.split('\t')[2])>=(mid) and row.split('\t')[1]==chrome):
+			mark=int(row.split('\t')[2])-mid
+			right_front=mark
+			name=row.split('\t')[0]
+			break
+	return (name+'\t'+str(right_front))
+	
+
+def compare_left_front(mid,chrome):
+	count=0
+	right_front=0
+	name = ''
+	gene_3.seek(0,0)
+	for row in gene_3:
+		if (int(row.split('\t')[6])<=mid and row.split('\t')[1]==chrome):
+			mark=mid-int(row.split('\t')[6] )
+			right_front=mark
+			name=row.split('\t')[0]
+			break
+	#print (name+'\t'+str(right_front))
+	return (name+'\t'+str(right_front))
+
+def compare_left_reverse(mid,chrome):
+	count=0
+	right_front=0
+	name = ''
+	gene_4.seek(0,0)
+	for row in gene_4:
+		if (int(row.split('\t')[6])<=mid and row.split('\t')[1]==chrome):
+			mark=mid-int(row.split('\t')[6])
+			right_front=mark
+			name=row.split('\t')[0]
+			break
+	#print (name+'\t'+str(right_front))
+	return (name+'\t'+str(right_front))
+
+
+#Combinatrics
+g=list(open('taco_nottaco_compare_TIT_1_fre0_selected_weak_unclustered.csv'))
+lines=list(g)
+gene_1=open('positive_sort_3.txt')
+gene_2=open('negative_sort_3.txt')
+gene_3=open('positive_sort_4r.txt')
+gene_4=open('negative_sort_4r.txt')
+gene_overlap=open('sort_3r.txt')
+tab_1=list(open('yanked_unclustered.tab'))
+start_gene=''
+end_gene=''
+orientation_gene=''
+for line in lines:
+	seek(line)
